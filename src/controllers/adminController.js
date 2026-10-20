@@ -95,3 +95,45 @@ exports.approveStudent = async (req, res) => {
     return res.status(500).json({ error: error.message || 'Error approving student' });
   }
 };
+
+// GET /api/admin/students
+// Query params: program, darja, status, search
+exports.getAllStudents = async (req, res) => {
+  try {
+    const { program, darja, status, search } = req.query;
+    let query = {};
+
+    const programFilter = program || darja;
+    if (programFilter && programFilter !== 'All' && programFilter !== 'All Darjat') {
+      query.enrollmentProgram = { $regex: new RegExp(programFilter, 'i') };
+    }
+
+    if (status && status !== 'All') {
+      query.status = status.toLowerCase();
+    }
+
+    if (search && search.trim()) {
+      const term = search.trim();
+      query.$or = [
+        { firstName: { $regex: term, $options: 'i' } },
+        { lastName: { $regex: term, $options: 'i' } },
+        { fatherName: { $regex: term, $options: 'i' } },
+        { cnic: { $regex: term, $options: 'i' } },
+        { guardianMobile: { $regex: term, $options: 'i' } },
+        { city: { $regex: term, $options: 'i' } },
+      ];
+    }
+
+    const students = await Student.find(query).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: students.length,
+      students
+    });
+  } catch (error) {
+    console.error('[Get All Students Error]:', error);
+    return res.status(500).json({ error: error.message || 'Error fetching all students' });
+  }
+};
+

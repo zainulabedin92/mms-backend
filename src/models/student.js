@@ -17,6 +17,11 @@ const StudentSchema = new mongoose.Schema(
       type: String,
       enum: ['pending', 'approved', 'rejected'],
       default: 'pending'
+    },
+    role: {
+      type: String,
+      enum: ['student', 'superadmin', 'admin', 'nazim_taleem'],
+      default: 'student'
     }
   },
   { timestamps: true }

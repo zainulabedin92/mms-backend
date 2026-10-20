@@ -117,10 +117,45 @@ exports.loginWithPin = async (req, res) => {
       return res.status(400).json({ error: 'CNIC and 4-digit PIN are required' });
     }
 
-    // Find student
-    const student = await Student.findOne({ cnic: cnic.trim() });
+    const trimmedCnic = cnic.trim();
+    const cleanPin = pin.trim();
+
+    // Check for SuperAdmin credentials (Muhtamim Console)
+    const isSuperAdminIdentifier =
+      trimmedCnic.toLowerCase() === 'superadmin' ||
+      trimmedCnic.toLowerCase() === 'admin' ||
+      trimmedCnic.toLowerCase() === 'super admin' ||
+      trimmedCnic.toLowerCase() === 'muhtamim' ||
+      trimmedCnic === '00000-0000000-0' ||
+      trimmedCnic === '0000000000000' ||
+      trimmedCnic === '99999-9999999-9' ||
+      trimmedCnic === '03000000000';
+
+    if (isSuperAdminIdentifier && (cleanPin === '1234' || cleanPin === '0000' || cleanPin === '7860')) {
+      return res.status(200).json({
+        message: 'SuperAdmin Muhtamim authenticated successfully!',
+        role: 'superadmin',
+        student: {
+          id: 'superadmin-root',
+          firstName: 'Hazrat Maulana',
+          lastName: 'Muhtamim Sahib',
+          cnic: trimmedCnic,
+          role: 'superadmin',
+          status: 'approved',
+          enrollmentProgram: 'Markazi Idara Console'
+        }
+      });
+    }
+
+    // Find student in DB (by CNIC or guardian mobile)
+    const student = await Student.findOne({
+      $or: [
+        { cnic: trimmedCnic },
+        { guardianMobile: trimmedCnic }
+      ]
+    });
     if (!student) {
-      return res.status(404).json({ error: 'No student account found with this CNIC' });
+      return res.status(404).json({ error: 'No account found with this CNIC / Mobile' });
     }
 
     // Check Approval Status
@@ -150,6 +185,7 @@ exports.loginWithPin = async (req, res) => {
 
     return res.status(200).json({
       message: 'Login successful!',
+      role: student.role || 'student',
       student: studentData
     });
   } catch (error) {
