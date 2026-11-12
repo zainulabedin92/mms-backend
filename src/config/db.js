@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const User = require('../models/User');
 
 const connectDB = async () => {
   try {
@@ -6,6 +7,12 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 5000 // 5 seconds timeout
     });
     console.log(`[MongoDB] Connected: ${conn.connection.host}`);
+
+    await User.syncIndexes().catch((err) => {
+      console.warn(`[MongoDB] User index sync warning: ${err.message}`);
+    });
+    const superAdmin = await User.ensureDefaultSuperAdmin();
+    console.log(`[MongoDB] SuperAdmin user ready in 'users' collection (username: ${superAdmin.username})`);
   } catch (error) {
     console.error(`====================================================`);
     console.error(`[MongoDB Warning] Could not connect to MongoDB database.`);

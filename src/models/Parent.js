@@ -3,6 +3,13 @@ const bcrypt = require('bcryptjs');
 
 const ParentSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      unique: true,
+      sparse: true,
+      index: true
+    },
     name: {
       type: String,
       required: [true, 'Parent / Guardian name is required'],
@@ -28,7 +35,6 @@ const ParentSchema = new mongoose.Schema(
     },
     passwordHash: {
       type: String,
-      required: [true, 'Password hash is required'],
       select: false
     },
     status: {

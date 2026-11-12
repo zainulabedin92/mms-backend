@@ -2,6 +2,13 @@ const mongoose = require('mongoose');
 
 const StudentSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      unique: true,
+      sparse: true,
+      index: true
+    },
     rollNo: {
       type: String,
       unique: true,
@@ -38,13 +45,23 @@ const StudentSchema = new mongoose.Schema(
     classId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Class',
-      required: [true, 'Class assignment (classId) is required'],
+      required: [
+        function () {
+          return this.status === 'Enrolled';
+        },
+        'Class assignment (classId) is required'
+      ],
       index: true
     },
     parentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Parent',
-      required: [true, 'Parent / Guardian reference (parentId) is required'],
+      required: [
+        function () {
+          return this.status === 'Enrolled';
+        },
+        'Parent / Guardian reference (parentId) is required'
+      ],
       index: true
     },
     status: {
@@ -58,6 +75,8 @@ const StudentSchema = new mongoose.Schema(
     },
 
     // Optional legacy & profile fields for backward compatibility with mobile app / admin
+    firstName: { type: String, trim: true },
+    lastName: { type: String, trim: true },
     pictureUrl: { type: String, default: null },
     address: { type: String, trim: true },
     city: { type: String, trim: true },

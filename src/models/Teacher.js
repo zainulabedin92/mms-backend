@@ -3,6 +3,13 @@ const bcrypt = require('bcryptjs');
 
 const TeacherSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      unique: true,
+      sparse: true,
+      index: true
+    },
     name: {
       type: String,
       required: [true, 'Teacher name is required'],

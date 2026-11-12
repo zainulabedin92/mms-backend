@@ -60,7 +60,29 @@ const authorize = (...allowedRoles) => {
   };
 };
 
+const optionalAuthenticate = (req, res, next) => {
+  try {
+    let token = null;
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer ')
+    ) {
+      token = req.headers.authorization.split(' ')[1];
+    } else if (req.headers['x-access-token']) {
+      token = req.headers['x-access-token'];
+    }
+    if (token) {
+      const secret = process.env.JWT_SECRET || 'supersecretmmskey123';
+      req.user = jwt.verify(token, secret);
+    }
+  } catch {
+    req.user = null;
+  }
+  next();
+};
+
 module.exports = {
   authenticate,
+  optionalAuthenticate,
   authorize
 };

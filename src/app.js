@@ -48,24 +48,32 @@ app.get('/', (req, res) => {
         update: 'PUT /api/classes/:id'
       },
       students: {
-        registerAdminFlow: 'POST /api/students',
+        registerAdminFlow: 'POST /api/students (Admin/SuperAdmin Bearer JWT Required)',
         list: 'GET /api/students',
-        getById: 'GET /api/students/:id'
+        getById: 'GET /api/students/:id',
+        update: 'PUT / PATCH /api/students/:id (SuperAdmin, Admin or Teacher Bearer JWT Required)',
+        delete: 'DELETE /api/students/:id (SuperAdmin Bearer JWT Required)'
       },
       parents: {
         login: 'POST /api/parents/login',
+        create: 'POST /api/parents (Admin/SuperAdmin Bearer JWT Required)',
         myChildren: 'GET /api/parents/my-children (Bearer JWT Required)',
         profile: 'GET /api/parents/profile (Bearer JWT Required)',
         list: 'GET /api/parents'
       },
       teachers: {
+        login: 'POST /api/teachers/login',
         list: 'GET /api/teachers',
-        create: 'POST /api/teachers',
+        create: 'POST /api/teachers (Admin/SuperAdmin Bearer JWT Required)',
         getById: 'GET /api/teachers/:id'
       },
-      legacyAuth: {
-        register: 'POST /api/auth/register',
-        loginPin: 'POST /api/auth/login-pin'
+      auth: {
+        loginPin: 'POST /api/auth/login-pin',
+        login: 'POST /api/auth/login',
+        me: 'GET /api/auth/me (Bearer JWT Required)',
+        registerAdminOnly: 'POST /api/auth/register (Admin/SuperAdmin Bearer JWT Required)',
+        listUsers: 'GET /api/auth/users (Admin/SuperAdmin Bearer JWT Required)',
+        createUser: 'POST /api/auth/users (Admin/SuperAdmin Bearer JWT Required)'
       }
     }
   });

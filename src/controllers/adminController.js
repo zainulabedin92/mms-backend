@@ -1,4 +1,7 @@
+const mongoose = require('mongoose');
 const Student = require('../models/Student');
+const User = require('../models/User');
+require('../models/Class'); // ensure Class model is registered for populate()
 const nodemailer = require('nodemailer');
 
 // Configure Nodemailer transporter
@@ -18,6 +21,12 @@ const createTransporter = () => {
 // GET /api/admin/pending
 exports.getPendingStudents = async (req, res) => {
   try {
+    if (req.user && req.user.role === 'student') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Students cannot view pending applications.'
+      });
+    }
     const pendingStudents = await Student.find({ status: 'pending' }).sort({ createdAt: -1 });
     return res.status(200).json({
       success: true,
@@ -43,6 +52,10 @@ exports.approveStudent = async (req, res) => {
 
     if (!student) {
       return res.status(404).json({ error: 'Student record not found' });
+    }
+
+    if (student.userId) {
+      await User.findByIdAndUpdate(student.userId, { status: 'Active' }).catch(() => null);
     }
 
     // Send email notification to guardianEmail
@@ -97,15 +110,22 @@ exports.approveStudent = async (req, res) => {
 };
 
 // GET /api/admin/students
-// Query params: program, darja, status, search
+// Query params: program, darja, classId, status, search
 exports.getAllStudents = async (req, res) => {
   try {
-    const { program, darja, status, search } = req.query;
+    const { program, darja, classId, status, search } = req.query;
     let query = {};
 
     const programFilter = program || darja;
     if (programFilter && programFilter !== 'All' && programFilter !== 'All Darjat') {
       query.enrollmentProgram = { $regex: new RegExp(programFilter, 'i') };
+    }
+
+    if (classId && classId !== 'all') {
+      if (!mongoose.Types.ObjectId.isValid(classId)) {
+        return res.status(400).json({ success: false, message: 'Invalid classId format' });
+      }
+      query.classId = classId;
     }
 
     if (status && status !== 'All') {
@@ -124,7 +144,14 @@ exports.getAllStudents = async (req, res) => {
       ];
     }
 
-    const students = await Student.find(query).sort({ createdAt: -1 });
+    // If logged in as a student, restrict strictly to their own record
+    if (req.user && req.user.role === 'student') {
+      query._id = req.user.studentId || req.user.id;
+    }
+
+    const students = await Student.find(query)
+      .populate({ path: 'classId', select: 'name section academicYear status' })
+      .sort({ createdAt: -1 });
 
     return res.status(200).json({
       success: true,
