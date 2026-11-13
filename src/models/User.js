@@ -124,47 +124,57 @@ UserSchema.statics.hashPin = function (pin) {
  */
 UserSchema.statics.ensureDefaultSuperAdmin = async function () {
   const defaultUsername = (process.env.SUPERADMIN_USERNAME || 'superadmin').toLowerCase().trim();
-  const defaultPin = (process.env.SUPERADMIN_PIN || '1234').trim();
-  const defaultCnic = (process.env.SUPERADMIN_CNIC || '00000-0000000-0').trim();
-  const defaultPhone = (process.env.SUPERADMIN_PHONE || '03000000000').trim();
+  const defaultName = (process.env.SUPERADMIN_NAME || 'Abdullah Zia').trim();
+  const defaultPin = (process.env.SUPERADMIN_PIN || '1999').trim();
+  const defaultCnic = (process.env.SUPERADMIN_CNIC || '37405-1892303-7').trim();
+  const defaultPhone = (process.env.SUPERADMIN_PHONE || '03029148955').trim();
+  const defaultEmail = (process.env.SUPERADMIN_EMAIL || 'abdullahzia540@gmail.com').toLowerCase().trim();
 
-  let existing = await this.findOne({ username: defaultUsername });
+  let existing = await this.findOne({ username: defaultUsername }).select('+pinHash');
   if (!existing) {
-    existing = await this.findOne({ role: 'superadmin' });
+    existing = await this.findOne({ role: 'superadmin' }).select('+pinHash');
   }
+
+  const pinHash = await bcrypt.hash(defaultPin, 10);
 
   if (existing) {
     const updates = {};
-    if (existing.username === defaultUsername && existing.role !== 'superadmin') {
-      updates.role = 'superadmin';
+    if (existing.username !== defaultUsername) updates.username = defaultUsername;
+    if (existing.role !== 'superadmin') updates.role = 'superadmin';
+    if (existing.status !== 'Active') updates.status = 'Active';
+    if (existing.name !== defaultName) updates.name = defaultName;
+    if (existing.cnic !== defaultCnic) updates.cnic = defaultCnic;
+    if (existing.phone !== defaultPhone) updates.phone = defaultPhone;
+    if (existing.email !== defaultEmail) updates.email = defaultEmail;
+
+    const isPinMatch = existing.pinHash ? await bcrypt.compare(defaultPin, existing.pinHash) : false;
+    if (!isPinMatch) {
+      updates.pinHash = pinHash;
     }
-    if (existing.status !== 'Active') {
-      updates.status = 'Active';
-    }
+
     if (Object.keys(updates).length) {
       existing = await this.findByIdAndUpdate(existing._id, { $set: updates }, { new: true });
     }
     return existing;
   }
 
-  const pinHash = await bcrypt.hash(defaultPin, 10);
   try {
     return await this.create({
       username: defaultUsername,
-      name: 'Hazrat Maulana Muhtamim Sahib',
+      name: defaultName,
       cnic: defaultCnic,
       phone: defaultPhone,
-      email: 'muhtamim@mms.edu',
+      email: defaultEmail,
       pinHash,
       role: 'superadmin',
       status: 'Active'
     });
   } catch (err) {
     if (err.code === 11000) {
-      return this.create({
+      return await this.create({
         username: defaultUsername,
-        name: 'Hazrat Maulana Muhtamim Sahib',
-        email: 'muhtamim@mms.edu',
+        name: defaultName,
+        email: defaultEmail,
         pinHash,
         role: 'superadmin',
         status: 'Active'

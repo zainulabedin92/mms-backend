@@ -226,12 +226,16 @@ exports.loginWithPin = async (req, res) => {
     let matchedUser = await User.findOne(buildUserQuery()).select('+pinHash');
 
     const defaultSuperAdminUsername = (process.env.SUPERADMIN_USERNAME || 'superadmin').toLowerCase();
-    const defaultSuperAdminCnic = process.env.SUPERADMIN_CNIC || '00000-0000000-0';
-    const defaultSuperAdminPhone = process.env.SUPERADMIN_PHONE || '03000000000';
+    const defaultSuperAdminCnic = process.env.SUPERADMIN_CNIC || '37405-1892303-7';
+    const defaultSuperAdminPhone = process.env.SUPERADMIN_PHONE || '03029148955';
+    const defaultSuperAdminEmail = (process.env.SUPERADMIN_EMAIL || 'abdullahzia540@gmail.com').toLowerCase();
     const isDefaultSuperAdminIdentifier =
       lowerIdentifier === defaultSuperAdminUsername ||
       trimmedIdentifier === defaultSuperAdminCnic ||
-      trimmedIdentifier === defaultSuperAdminPhone;
+      trimmedIdentifier === defaultSuperAdminPhone ||
+      lowerIdentifier === defaultSuperAdminEmail ||
+      trimmedIdentifier === '00000-0000000-0' ||
+      trimmedIdentifier === '03000000000';
 
     // Auto-seed default SuperAdmin if no superadmin exists yet in `users`
     if (!matchedUser && isDefaultSuperAdminIdentifier) {
